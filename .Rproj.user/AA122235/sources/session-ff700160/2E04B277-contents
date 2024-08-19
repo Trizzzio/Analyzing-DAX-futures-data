@@ -93,3 +93,4 @@ data=data%>%
   filter(ClosingPrice!="NA")
 
 
+
