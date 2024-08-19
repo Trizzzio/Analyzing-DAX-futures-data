@@ -5,6 +5,37 @@ library(dplyr)
 datagap=data%>%
   mutate(Gap= CurrentDayOpen-ClosingPrice,
          GapMagnitude=abs(Gap))%>%
-  mutate(IsGapGreaterThan10=GapMagnitude>10)
+  mutate(IsGapGreaterThan10=GapMagnitude>20)
 
 #Check if gap has been closed during the day
+
+datagap = datagap%>%
+group_by(Date) %>%
+  group_by(Date)%>%
+  mutate(GapClosed=case_when(IsGapGreaterThan10 & Gap >0 &min(Low) <= ClosingPrice ~ TRUE,
+                             IsGapGreaterThan10 & Gap <0 &max(High) >= ClosingPrice ~ TRUE,
+                             TRUE ~ FALSE))%>% ungroup()
+  
+
+##Summarizing
+
+
+Gap_Results = datagap %>%
+  group_by(Date) %>%
+  summarize(
+    ClosingPrice=first(ClosingPrice),
+    CurrentDayOpen = first(CurrentDayOpen),
+    Gap=first(Gap),
+    IsGapGreaterThan10=first(IsGapGreaterThan10),
+    GapClosed=any(GapClosed)
+  )
+
+
+
+Gap_Results=Gap_Results%>%
+  mutate(GapInd=if_else(GapClosed & IsGapGreaterThan10 , 1, 0))%>%
+  mutate(noGap=if_else(IsGapGreaterThan10,0,1))
+
+SumGapClosed=sum(Gap_Results$GapInd)
+SumNoGap=sum(Gap_Results$noGap,na.rm=TRUE)
+GapClosedRatio=SumGapClosed/(201-SumNoGap)
