@@ -39,4 +39,4 @@ Gap_Results=Gap_Results%>%
 
 SumGapClosed=sum(Gap_Results$GapInd)
 SumNoGap=sum(Gap_Results$noGap,na.rm=TRUE)
-SumGapClosed/(201-SumNoGap)
+SumGapClosed/(248-SumNoGap)

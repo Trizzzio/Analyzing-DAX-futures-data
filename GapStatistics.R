@@ -2,7 +2,7 @@ library(dplyr)
 
 ##Creating a function that outputs statistics for different gaps
 
-analyze_gap_closure <- function(data, gap_type = c("both", "positive", "negative"), gap_size_min = 10, gap_size_max=150) {
+analyze_gap_closure <- function(data, gap_type = c("both", "positive", "negative"), gap_size_min = 10, gap_size_max=1500) {
   
   #Creating error output if gap type input is inputted wrong
   if(!gap_type %in% c("both", "positive", "negative")){

@@ -33,9 +33,7 @@ data=data%>%
          -"Point of Control", -"Value Area High Value", -"Value Area Low Value", 
          -"Volume Weighted Average Price", -"Previous Day High Line")
 
-data=data%>%
-  filter(Date !="2024-08-19")
-  
+
 
 #Explore data
 
@@ -44,53 +42,58 @@ glimpse(data)
 head(data)
 
 
-#create new column with previous day close 
+#create new column with previous day close and current day open 
 
 ClosingPrice = data %>%
   filter(Time == as_hms("21:30:00")) %>%
   select(Date, ClosingPrice = Last) %>%
-  mutate(Date=Date+days(1))
-
-data=data%>%
-  left_join(ClosingPrice, by ="Date")
-
-rm(ClosingPrice)
-
-#create new column with previous day high and low 
-
-highprice = data%>%
-  group_by(Date)%>%
-  summarise(PreviousDayHigh=max(High, na.rm = TRUE))%>%
-  ungroup%>%
-  mutate(Date+days(1))%>%
-  select(-"Date")%>%
-  rename(Date="Date + days(1)")
-
-lowprice = data%>%
-  group_by(Date)%>%
-  summarise(PreviousDayLow=min(Low, na.rm = TRUE))%>%
-  ungroup%>%
-  mutate(Date+days(1))%>%
-  select(-"Date")%>%
-  rename(Date="Date + days(1)")
-
-data=data%>%
-  left_join(highprice, by="Date")%>%
-  left_join(lowprice, by="Date")
-rm(lowprice,highprice)
-
-#Create new column with current Day open
+  mutate(ShiftedClosingPrice =lag(ClosingPrice, n=1))%>%
+  select(-"ClosingPrice")%>%rename("ClosingPrice"=ShiftedClosingPrice)
 
 Open=data%>%
   filter(Time==as_hms("08:00:00"))%>%
   select(Date,CurrentDayOpen=Open)
 
 data=data%>%
+  left_join(ClosingPrice, by="Date")%>%
   left_join(Open, by="Date")
-rm(Open)
+
+rm(ClosingPrice, Open)
+
+#create new column with previous day high and low 
+
+highprice = data%>%
+  group_by(Date)%>%
+  summarise(DayHigh=max(High, na.rm = TRUE))%>%
+  ungroup()%>%
+  mutate(PreviousDayHigh =lag(DayHigh, n=1))%>%
+  select(-"DayHigh")
+
+lowprice = data%>%
+  group_by(Date)%>%
+  summarise(DayLow=min(Low, na.rm = TRUE))%>%
+  ungroup()%>%
+  mutate(PreviousDayLow =lag(DayLow, n=1))%>%
+  select(-"DayLow")
 
 data=data%>%
-  filter(ClosingPrice!="NA")
+  left_join(highprice, by="Date")%>%
+  left_join(lowprice, by="Date")
+
+rm(lowprice,highprice)
+
+
+data<-data%>%
+  filter(!is.na(ClosingPrice))%>%
+  filter(!is.na(PreviousDayHigh))%>%
+  filter(!is.na(PreviousDayLow))
+
+##Eliminating outlier days, eliminating days with too little observations
+
+data <- data %>%
+  group_by(Date) %>%
+  filter(n() == 40) %>%   # Keep only groups with exactly 40 rows
+  ungroup()
 
 
 
